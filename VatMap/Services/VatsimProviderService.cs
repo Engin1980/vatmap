@@ -5,8 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using VatMap.Model.Shared;
-using VatMap.Model.Vatsim;
+using VatMap.Model.Back.Vatsim;
 
 namespace VatMap.Services
 {
