@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { HttpService } from 'src/app/services/http.service';
 import { Observable } from 'rxjs';
 import { Snapshot } from 'src/app/model/snapshot';
+import { Atc } from 'src/app/model/atc';
 
 @Component({
   selector: 'app-pure-data',

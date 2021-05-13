@@ -1,5 +1,5 @@
 export class Atc {
-  public Name : string;
-  public Callsign : string;
-  public Frequency : number;
+  public name: string = "???";
+  public callsign: string = "???";
+  public frequency: number = 0;
 }
