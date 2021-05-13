@@ -1,2 +1,13 @@
 <p>pure-data works!</p>
 <button (click)="dudla_click()">Dudla</button>
+<span>{{vm}}</span>
+<div *ngIf="vm">
+  <h1>Atcs</h1>
+  <div *ngFor="let atc of vm.atcs">
+    <b>{{atc.callsign}}</b> ({{atc.frequency}})
+  </div>
+  <h1>Planes</h1>
+  <div *ngFor="let plane of vm.planes">
+    <b>{{plane.callsign}}</b> ({{plane.altitude}})
+  </div>
+</div>

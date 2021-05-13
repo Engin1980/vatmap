@@ -7,5 +7,8 @@ namespace VatMap.Model.Front
 {
   public class Atc
   {
+    public string Name { get; set; }
+    public string Callsign { get; set; }
+    public double Frequency { get; set; }
   }
 }

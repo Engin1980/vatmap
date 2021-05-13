@@ -4,5 +4,6 @@
   {
     public string Callsign { get; set; }
     public Gps Gps { get; set; }
+    public int Altitude { get; set; }
   }
 }

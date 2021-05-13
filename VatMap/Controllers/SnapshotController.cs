@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
+using System.Linq;
 using System.Threading.Tasks;
+using VatMap.Model.Back.Vatsim;
 using VatMap.Model.Front;
+using VatMap.Services;
 
 namespace VatMap.Controllers
 {
@@ -9,16 +11,19 @@ namespace VatMap.Controllers
   [ApiController]
   public class SnapshotController : ControllerBase
   {
+
+    private readonly VatsimProviderService vatsimProvider;
+
+    public SnapshotController([FromServices] VatsimProviderService vatsimProvider)
+    {
+      this.vatsimProvider = vatsimProvider;
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetSnapshotAsync()
     {
-      Snapshot s = new Snapshot()
-      {
-        Atcs = null,
-        Date = DateTime.Now,
-        Planes = null
-      };
-      return this.Ok(s);
+      Snapshot ret = this.vatsimProvider.Obtain();
+      return this.Ok(ret);
     }
   }
 }

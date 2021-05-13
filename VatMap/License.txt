@@ -1,0 +1,5 @@
+﻿Airport db:
+https://openflights.org/data.html#airport
+
+conversion
+https://json2csharp.com/

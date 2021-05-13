@@ -1,121 +1,73 @@
 ﻿using System;
 using System.Collections.Generic;
 using VatMap.Model.Back.Shared;
+using VatMap.Model.Back.Vatsim.JsonModel;
+using VatMap.Model.Front;
 
 namespace VatMap.Model.Back.Vatsim
 {
   public class Parser
   {
-    private const string CLIENTS_LINE = "!CLIENTS:";
-    private const string BLOCK_END_LINE = ";";
-    private const string UPDATE_LINE = "UPDATE";
-
     public Parser()
     {
 
     }
 
-    internal RecordSet Parse(string content)
+    internal Snapshot Parse(Root jsonData)
     {
-      RecordSet ret;
 
-      string[] lines = content.Split('\n');
-      int index = 0;
+      DateTime updateTime = jsonData.general.update_timestamp;
 
-      DateTime updateTime = this.ReadUpdateTime(lines, ref index);
+      List<Plane> planes = ReadPlanes(jsonData);
+      List<Atc> atcs = ReadAtcs(jsonData);
 
-      index = this.ScrollToClients(lines, index);
-      List<Record> records = ReadClients(lines, ref index);
-
-      ret = new RecordSet(updateTime, records);
-      return ret;
-    }
-
-    private static List<Record> ReadClients(string[] lines, ref int index)
-    {
-      List<Record> ret = new List<Record>();
-
-      while (true)
+      Snapshot ret = new Snapshot()
       {
-        if (lines[index] == BLOCK_END_LINE) break; // end of data
-        index++;
-        string line = lines[index];
-        string[] pts = line.Split(':');
-        if (pts.Length < 39) break; // invalid data? or what?
-
-        Record r = ParseLineBlocks(pts);
-
-        ret.Add(r);
-      }
-
+        Atcs = atcs,
+        Planes = planes,
+        Date = updateTime
+      };
       return ret;
     }
 
-    private static Record ParseLineBlocks(string[] data)
+    private List<Plane> ReadPlanes(Root jsonData)
     {
-      Record ret = new Record();
+      List<Plane> ret = new List<Plane>();
 
-      ret.Callsign = data[0];
-      ret.CId = data[1];
-      ret.RealName = data[2];
-      ret.ClientType = ParseToClientType(data[3]);
-      ret.Frequency = ParseToDouble(data[4]);
-      ret.Position = ParseToPosition(data[5], data[6]);
-      ret.Altitude = ParseToInt(data[7]);
-      ret.GroundSpeed = ParseToInt(data[8]);
-      ret.PlannedAircraft = data[9];
-      ret.PlannedTasCruise = ParseToInt(data[10]).Value;
-      ret.PlannedDepartureAirport = data[11];
-      ret.PlannedAltitude = data[12];
-      ret.PlannedDestinationAirport = data[13];
-      ret.Server = data[14];
-      ret.protrevision = data[15];
-      ret.Rating = data[16];
-      ret.Transponder = data[17];
-      ret.FacilityType = data[18];
-      ret.VisualRange = data[19];
-      ret.PlannedRevision = data[20];
-      ret.PlannedFlightType = data[21];
-      ret.PlannedDepTime = ParseToTimeSpan(data[22], ParseFlag.ZeroAsNull | ParseFlag.IllegalAsNull);
-      ret.PlannedActDepTime = ParseToTimeSpan(data[23], ParseFlag.ZeroAsNull | ParseFlag.IllegalAsNull);
-      ret.PlannedEnrouteTime = ParseToTimeSpan(data[24], data[25]);
-      ret.PlannedFuelTime = ParseToTimeSpan(data[26], data[27]);
-      ret.PlannedAlternateAirport = data[28];
-      ret.PlannedRemark = data[29];
-      ret.PlannedRoute = data[30];
-      ret.PlannedDepartureAirportLatitude = ParseToDouble(data[31]);
-      ret.PlannedDepartureAirportLongitude = ParseToDouble(data[32]);
-      ret.PlannedDestinationAirportLatitude = ParseToDouble(data[33]);
-      ret.PlannedDestinationAirportLongitude = ParseToDouble(data[34]);
-      ret.AtisMessage = data[35];
-      ret.TimeLastAtisReceived = ParseToDateTime(data[36]);
-      ret.TimeLogon = ParseToDateTime(data[37]).Value;
-      ret.Heading = ParseToInt(data[38]);
-      ret.QnhHg = ParseToDouble(data[39]);
-      ret.QnhMb = ParseToDouble(data[40]);
-
-      return ret;
-    }
-
-    private DateTime ReadUpdateTime(string[] lines, ref int index)
-    {
-      while (lines[index].StartsWith(UPDATE_LINE) == false)
+      jsonData.pilots.ForEach(q =>
       {
-        index++;
-        if (index >= lines.Length)
-          throw new Exception("Unable to find data in the lines.");
-      }
-      string tmp = lines[index].Substring(9);
-      DateTime ret = Utils.ToDateTime(tmp, false);
-      index++;
+        Plane p = new Plane()
+        {
+          Altitude = q.altitude,
+          Callsign = q.callsign,
+          Gps = new Gps()
+          {
+            Latitude = q.latitude,
+            Longitude = q.longitude
+          }
+        };
+        ret.Add(p);
+      });
+
       return ret;
     }
 
-    private int ScrollToClients(string[] lines, int index)
+    private List<Atc> ReadAtcs(Root jsonData)
     {
-      while (lines[index] != CLIENTS_LINE) index++;
-      index++;
-      return index;
+      List<Atc> ret = new List<Atc>();
+
+      jsonData.controllers.ForEach(q =>
+      {
+        Atc atc = new Atc()
+        {
+          Callsign = q.callsign,
+          Frequency = q.frequency,
+          Name = q.name
+        };
+        ret.Add(atc);
+      });
+
+      return ret;
     }
 
 

@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using VatMap.Services;
 
 namespace VatMap
 {
@@ -11,7 +11,7 @@ namespace VatMap
   {
     public Startup(IConfiguration configuration)
     {
-      Configuration = configuration;
+      this.Configuration = configuration;
     }
 
     public IConfiguration Configuration { get; }
@@ -26,6 +26,18 @@ namespace VatMap
       {
         configuration.RootPath = "ClientApp/dist";
       });
+
+
+      //CORS ADDED:
+      services.AddCors(options =>
+      {
+        options.AddPolicy("MY_CORS_ALLOW_ORIGIN", builder =>
+                            builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyHeader());
+      });
+
+
+      services.AddTransient<VatsimProviderService>();
+      services.AddTransient<LogService>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,16 +62,19 @@ namespace VatMap
                   template: "{controller}/{action=Index}/{id?}");
       });
 
+      app.UseCors("MY_CORS_ALLOW_ORIGIN");
+
       app.UseSpa(spa =>
       {
-              // To learn more about options for serving an Angular SPA from ASP.NET Core,
-              // see https://go.microsoft.com/fwlink/?linkid=864501
+        // To learn more about options for serving an Angular SPA from ASP.NET Core,
+        // see https://go.microsoft.com/fwlink/?linkid=864501
 
-              spa.Options.SourcePath = "ClientApp";
+        spa.Options.SourcePath = "ClientApp";
 
         if (env.IsDevelopment())
         {
-          spa.UseAngularCliServer(npmScript: "start");
+          //spa.UseAngularCliServer(npmScript: "start");
+          spa.UseProxyToSpaDevelopmentServer("http://localhost:4200");
         }
       });
     }

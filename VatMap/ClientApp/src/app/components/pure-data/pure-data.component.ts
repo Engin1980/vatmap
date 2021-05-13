@@ -12,7 +12,7 @@ export class PureDataComponent implements OnInit {
 
   constructor(private http: HttpService) { }
 
-  public snapshot: Snapshot | null = null;
+  public vm: Snapshot | null = null;
 
   ngOnInit(): void {
 
@@ -23,8 +23,12 @@ export class PureDataComponent implements OnInit {
   }
 
   public dudla_click() {
+    this.vm = null;
     this.getSnapshot().subscribe(
-      ret => this.snapshot = ret,
+      ret => {
+        console.log(JSON.stringify(ret));
+        this.vm = ret;
+      },
       err => console.log(err)
     );
   }

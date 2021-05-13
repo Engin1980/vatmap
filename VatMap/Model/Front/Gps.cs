@@ -7,5 +7,7 @@ namespace VatMap.Model.Front
 {
   public class Gps
   {
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
   }
 }

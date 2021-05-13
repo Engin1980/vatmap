@@ -1,23 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
 using VatMap.Model.Back.Vatsim;
+using VatMap.Model.Back.Vatsim.JsonModel;
+using VatMap.Model.Front;
 
 namespace VatMap.Services
 {
   public class VatsimProviderService
   {
-    private static readonly string[] URLs = new string[] {
-      "http://www.pcflyer.net/DataFeed/vatsim-data.txt",
-      "http://fsproshop.com/servinfo/vatsim-data.txt",
-      "http://info.vroute.net/vatsim-data.txt",
-      "http://data.vattastic.com/vatsim-data.txt",
-      "http://vatsim.aircharts.org/vatsim-data.txt",
-      "http://vatsim-data.hardern.net/vatsim-data.txt" };
+    //https://status.vatsim.net/status.json
+    private static readonly string VATSIM_DATA_URL = "file://r:/vatsim.txt";
+    //"https://data.vatsim.net/v3/vatsim-data.json";
 
     private readonly LogService logService;
     private readonly Downloader downloader = new Downloader();
@@ -26,61 +20,30 @@ namespace VatMap.Services
     public VatsimProviderService([FromServices] LogService logService)
     {
       this.logService = logService;
-
-      //TODO
-      //shuffle urls
-      //Random rnd = new Random();
-      //URLs = URLs.OrderBy(q => r.Next()).ToArray();
     }
 
-    public RecordSet Obtain()
+    public Snapshot Obtain()
     {
-      RecordSet ret = null;
-      for (int i = 0; i < URLs.Length; i++)
-      {
-        string url = URLs[i];
-        try
-        {
-          ret = Obtain(url);
-          if (ret.State == RecordSet.StateByTime.Current)
-            break;
-        }
-        catch (Exception ex)
-        {
-          // logged inside already 
-          // just skip to take another record
-          continue;
-        }
-      }
-      if (ret == null) {
-        this.logService.Log(LogService.Level.Critical, "Failed to download some VATSIM data!");
-        throw new ApplicationException("Unable to download VATSIM data.");
-      }
-
-      return ret;
-    }
-
-    public RecordSet Obtain(string url)
-    {
-      string content;
-      RecordSet ret = null;
+      Root content;
+      Snapshot ret = null;
 
       try
       {
-        content = downloader.Download(url);      
-      } catch (Exception ex)
+        content = this.downloader.Download(VATSIM_DATA_URL);
+      }
+      catch (Exception ex)
       {
-        logService.Log(LogService.Level.Warning, $"Failed to download content from {url}.", ex);
+        this.logService.Log(LogService.Level.Warning, $"Failed to download content from {VATSIM_DATA_URL}.", ex);
         throw new ApplicationException("Unable to download.", ex);
       }
 
       try
       {
-        ret = parser.Parse(content);
+        ret = this.parser.Parse(content);
       }
       catch (Exception ex)
       {
-        logService.Log(LogService.Level.Warning, $"Failed to parse content from {url}.", ex);
+        this.logService.Log(LogService.Level.Warning, $"Failed to parse content from {VATSIM_DATA_URL}.", ex);
         throw new ApplicationException("Unable to parse content.", ex);
       }
 
