@@ -11,7 +11,7 @@ export class HttpService {
 
   constructor(private http: HttpClient) { }
 
-  public doGet<T>(url: string): Observable<T> {
+  public get<T>(url: string): Observable<T> {
     const fullUrl = this.baseUrl + url;
     console.log("doing get to " + fullUrl);
     const ret$ = this.http.get<T>(fullUrl);

@@ -40,6 +40,7 @@ namespace VatMap.Model.Back.Vatsim
         {
           Altitude = q.altitude,
           Callsign = q.callsign,
+          Heading = q.heading,
           Gps = new Gps()
           {
             Latitude = q.latitude,

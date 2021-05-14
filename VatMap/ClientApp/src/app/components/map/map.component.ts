@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import 'ol/ol.css';
 import { HttpService } from 'src/app/services/http.service';
 import { Snapshot } from 'src/app/model/snapshot';
+import { SnapshotService } from 'src/app/services/snapshot.service';
 declare var ol: any;
 
 @Component({
@@ -14,9 +15,9 @@ export class MapComponent implements OnInit {
 
   public map: any;
   public vm: Snapshot | null = null;
-  public vectorLayer: ol.layer.Vector = new ol.layer.Vector({});
+  public vectorLayer = new ol.layer.Vector({});
 
-  constructor(private http: HttpService) { }
+  constructor(private snapshotService: SnapshotService) { }
 
   ngOnInit(): void {
 
@@ -32,12 +33,12 @@ export class MapComponent implements OnInit {
         this.vectorLayer
       ],
       view: new ol.View({
-        center: ol.proj.fromLonLat([17,50]),
+        center: ol.proj.fromLonLat([17, 50]),
         zoom: 4
       })
     });
 
-    this.http.doGet<Snapshot>("snapshot").subscribe(
+    this.snapshotService.get().subscribe(
       ret => {
         this.vm = ret;
         const features: ol.Feature[] = [];
@@ -49,8 +50,8 @@ export class MapComponent implements OnInit {
           const iconStyle = new ol.style.Style({
             image: new ol.style.Icon({
               src: 'https://icons.iconarchive.com/icons/unclebob/spanish-travel/24/plane-icon.png',
-              rotation: 0,
-              size: [16, 16]
+              rotation: this.degToRad(plane.heading),
+              size: [32, 32]
             }),
             text: new ol.style.Text({
               text: plane.callsign,
@@ -68,6 +69,10 @@ export class MapComponent implements OnInit {
       },
       err => console.log(err)
     );
+  }
+
+  private degToRad(val: number): number {
+    return val / 180.0 * Math.PI;
   }
 
 }

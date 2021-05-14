@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { HttpService } from 'src/app/services/http.service';
 import { Observable } from 'rxjs';
 import { Snapshot } from 'src/app/model/snapshot';
-import { Atc } from 'src/app/model/atc';
+import { SnapshotService } from 'src/app/services/snapshot.service';
 
 @Component({
   selector: 'app-pure-data',
@@ -11,7 +11,7 @@ import { Atc } from 'src/app/model/atc';
 })
 export class PureDataComponent implements OnInit {
 
-  constructor(private http: HttpService) { }
+  constructor(private snapshotService: SnapshotService) { }
 
   public vm: Snapshot | null = null;
 
@@ -19,13 +19,9 @@ export class PureDataComponent implements OnInit {
 
   }
 
-  public getSnapshot(): Observable<Snapshot> {
-    return this.http.doGet("snapshot");
-  }
-
   public dudla_click() {
     this.vm = null;
-    this.getSnapshot().subscribe(
+    this.snapshotService.get().subscribe(
       ret => {
         console.log(JSON.stringify(ret));
         this.vm = ret;
