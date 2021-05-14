@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using System.Threading.Tasks;
-using VatMap.Model.Back.Vatsim;
+using VatMap.Model.Back.Vatsim.JsonModel;
 using VatMap.Model.Front;
 using VatMap.Services;
 
@@ -13,16 +12,22 @@ namespace VatMap.Controllers
   {
 
     private readonly VatsimProviderService vatsimProvider;
+    private readonly SnapshotProviderService snapshotProviderService;
 
-    public SnapshotController([FromServices] VatsimProviderService vatsimProvider)
+    public SnapshotController([FromServices] VatsimProviderService vatsimProvider,
+      [FromServices] SnapshotProviderService snapshotProviderService
+      )
     {
       this.vatsimProvider = vatsimProvider;
+      this.snapshotProviderService = snapshotProviderService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetSnapshotAsync()
     {
-      Snapshot ret = this.vatsimProvider.Obtain();
+      Root json = this.vatsimProvider.Obtain();
+      this.snapshotProviderService.UpdateByVatsim(json);
+      Snapshot ret = this.snapshotProviderService.GetCurrent();
       return this.Ok(ret);
     }
   }

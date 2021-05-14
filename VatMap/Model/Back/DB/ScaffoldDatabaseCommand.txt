@@ -1,0 +1,1 @@
+﻿Scaffold-DbContext "Data Source=VAJGL-NB-490;Initial Catalog=vatmap;Integrated Security=True" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Model\Back\DB

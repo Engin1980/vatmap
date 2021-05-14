@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using VatMap.Model.Back.DB;
 using VatMap.Services;
 
 namespace VatMap
@@ -21,6 +23,9 @@ namespace VatMap
     {
       services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
+      services.AddDbContext<VatmapContext>(
+        options => options.UseSqlServer("name=ConnectionStrings:DefaultConnection"));
+
       // In production, the Angular files will be served from this directory
       services.AddSpaStaticFiles(configuration =>
       {
@@ -38,6 +43,7 @@ namespace VatMap
 
       services.AddTransient<VatsimProviderService>();
       services.AddTransient<LogService>();
+      services.AddSingleton<SnapshotProviderService>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
