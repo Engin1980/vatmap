@@ -5,11 +5,19 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace VatMap.Model.Front
 {
+  [Serializable]
   public class Snapshot
   {
-    public List<Plane> Planes { get; set; }
-    public List<Atc> Atcs { get; set; }
+    public List<Plane> Planes { get; set; } = new List<Plane>();
+    public List<Atc> Atcs { get; set; } = new List<Atc>();
     public DateTime Date { get; set; }
+    public bool IsObsolete
+    {
+      get
+      {
+        return this.Date < DateTime.Now.AddMinutes(-2);
+      }
+    }
 
     public Snapshot Clone()
     {

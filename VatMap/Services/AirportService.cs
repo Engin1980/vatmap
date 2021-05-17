@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using VatMap.Model.Back.DB;
@@ -10,16 +11,39 @@ namespace VatMap.Services
 {
   public class AirportService
   {
-    private readonly VatmapContext db;
+
     private readonly Dictionary<string, OAirport> proxy = new Dictionary<string, OAirport>();
+    private readonly IServiceProvider serviceProvider;
+
+    public AirportService(IServiceProvider serviceProvider)
+    {
+      this.serviceProvider = serviceProvider;
+    }
+
+    private class AirportDbProvider
+    {
+      private readonly VatmapContext db;
+
+      public AirportDbProvider([FromServices] VatmapContext db)
+      {
+        this.db = db;
+      }
+
+      internal DAirport Get(string icao)
+      {
+        DAirport ret = this.db.Airport.FirstOrDefault(q => q.Icao == icao);
+        return ret;
+      }
+    }
 
     internal OAirport GetOrDefault(string icao)
     {
+      VatmapContext db = (VatmapContext)this.serviceProvider.GetService(typeof(VatmapContext));
       OAirport ret;
 
       if (this.proxy.TryGetValue(icao, out ret) == false)
       {
-        DAirport tmp = this.db.Airport.FirstOrDefault(q => q.Icao == icao);
+        DAirport tmp = db.Airport.FirstOrDefault(q => q.Icao == icao);
         if (tmp != null)
         {
           ret = new OAirport()
@@ -47,9 +71,5 @@ namespace VatMap.Services
       return ret;
     }
 
-    public AirportService([FromServices] VatmapContext vatmapContext)
-    {
-      this.db = vatmapContext;
-    }
   }
 }

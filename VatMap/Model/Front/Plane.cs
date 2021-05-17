@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace VatMap.Model.Front
 {
+  [Serializable]
   public class Plane
   {
     public string Callsign { get; set; }

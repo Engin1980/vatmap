@@ -1,5 +1,8 @@
-﻿namespace VatMap.Model.Front
+﻿using System;
+
+namespace VatMap.Model.Front
 {
+  [Serializable]
   public class Airport
   {
     public string ICAO { get; set; }

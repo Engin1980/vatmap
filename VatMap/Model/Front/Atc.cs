@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace VatMap.Model.Front
 {
+  [Serializable]
   public class Atc
   {
     public string Name { get; set; }

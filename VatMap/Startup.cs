@@ -24,7 +24,9 @@ namespace VatMap
       services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
       services.AddDbContext<VatmapContext>(
-        options => options.UseSqlServer("name=ConnectionStrings:DefaultConnection"));
+        options =>
+          options.UseSqlServer(Configuration.GetConnectionString("localDbConnection")),
+          ServiceLifetime.Singleton);
 
       // In production, the Angular files will be served from this directory
       services.AddSpaStaticFiles(configuration =>
@@ -43,6 +45,7 @@ namespace VatMap
 
       services.AddTransient<VatsimProviderService>();
       services.AddTransient<LogService>();
+      services.AddSingleton<AirportService>();
       services.AddSingleton<SnapshotProviderService>();
     }
 

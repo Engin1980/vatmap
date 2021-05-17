@@ -1,10 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 
-import 'ol/ol.css';
+import { Map, View } from "ol";
+import { Tile, Vector } from 'ol/layer';
+import { Vector as VectorSource } from 'ol/source';
+import { OSM } from 'ol/source';
+import { fromLonLat } from 'ol/proj';
+import { Feature } from 'ol';
+import { Point } from 'ol/geom';
+import { Style, Icon, Text } from 'ol/style';
+
 import { HttpService } from 'src/app/services/http.service';
 import { Snapshot } from 'src/app/model/snapshot';
 import { SnapshotService } from 'src/app/services/snapshot.service';
-declare var ol: any;
+import { LogService } from 'src/app/services/log.service';
+
 
 @Component({
   selector: 'app-map',
@@ -15,64 +24,78 @@ export class MapComponent implements OnInit {
 
   public map: any;
   public vm: Snapshot | null = null;
-  public vectorLayer = new ol.layer.Vector({});
+  private vectorLayer = new Vector({});
+  private log: LogService = new LogService("MapComponent");
 
   constructor(private snapshotService: SnapshotService) { }
 
   ngOnInit(): void {
 
-    var osmLayer = new ol.layer.Tile({
-      source: new ol.source.OSM(),
+    this.log.log("preparing map");
+    var osmLayer = new Tile({
+      source: new OSM(),
       opacity: 1
     });
 
-    this.map = new ol.Map({
+    this.log.log("drawing map");
+    this.map = new Map({
       target: 'map',
       layers: [
-        osmLayer,
-        this.vectorLayer
+        osmLayer
       ],
-      view: new ol.View({
-        center: ol.proj.fromLonLat([17, 50]),
+      view: new View({
+        center: fromLonLat([17, 50]),
         zoom: 4
       })
     });
 
+    this.log.log("downloading data");
     this.snapshotService.get().subscribe(
-      ret => {
-        this.vm = ret;
-        const features: ol.Feature[] = [];
-        for (let plane of this.vm.planes) {
-          const iconFeature = new ol.Feature({
-            geometry: new ol.geom.Point(ol.proj.fromLonLat([plane.gps.longitude, plane.gps.latitude])),
-            name: plane.callsign
-          });
-          const iconStyle = new ol.style.Style({
-            image: new ol.style.Icon({
-              src: 'https://icons.iconarchive.com/icons/unclebob/spanish-travel/24/plane-icon.png',
-              rotation: this.degToRad(plane.heading),
-              size: [32, 32]
-            }),
-            text: new ol.style.Text({
-              text: plane.callsign,
-              offsetY: 20,
-              font: '12px sans-serif'
-            })
-          });
-          iconFeature.setStyle(iconStyle);
-          features.push(iconFeature);
-        }
-        const vectorSource = new ol.source.Vector({
-          features: features
-        });
-        this.vectorLayer.setSource(vectorSource);
-      },
-      err => console.log(err)
+      ret => this.updateVectorLayer(ret),
+      err => {
+        this.log.log("error!");
+        console.log(err);
+      }
     );
   }
 
   private degToRad(val: number): number {
     return val / 180.0 * Math.PI;
+  }
+
+  private updateVectorLayer(ret: Snapshot): void {
+    {
+      this.log.log("data downloaded");
+      this.log.log(JSON.stringify(ret));
+      this.vm = ret;
+      const features: Feature[] = [];
+      for (let plane of this.vm.planes) {
+        const iconFeature: Feature = new Feature({
+          geometry: new Point(fromLonLat([plane.gpsHistory[0].longitude, plane.gpsHistory[0].latitude])),
+          name: plane.callsign
+        });
+        const iconStyle = new Style({
+          image: new Icon({
+            src: 'https://icons.iconarchive.com/icons/unclebob/spanish-travel/24/plane-icon.png',
+            rotation: this.degToRad(plane.heading),
+            size: [32, 32]
+          }),
+          text: new Text({
+            text: plane.callsign,
+            offsetY: 20,
+            font: '12px sans-serif'
+          })
+        });
+        iconFeature.setStyle(iconStyle);
+        features.push(iconFeature);
+      }
+      this.log.log("Total features: " + features.length);
+      const vectorSource = new VectorSource({
+        features: features
+      });
+      this.vectorLayer.setSource(vectorSource);
+      this.log.log("map updated");
+    }
   }
 
 }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using VatMap.Model.Back.Vatsim.JsonModel;
 using VatMap.Model.Front;
 
@@ -9,14 +9,21 @@ namespace VatMap.Services
 {
   public class SnapshotProviderService
   {
+    private readonly VatsimProviderService vatsimProvider;
     private readonly Updater updater;
-    public SnapshotProviderService([FromServices] AirportService airportService)
+    private readonly LogService logService;
+    private bool updateInProgress = false;
+
+    public SnapshotProviderService([FromServices] VatsimProviderService vatsimProvider,
+      [FromServices] AirportService airportService,
+      [FromServices] LogService logService)
     {
+      this.logService = logService;
+      this.vatsimProvider = vatsimProvider;
       this.updater = new Updater(airportService);
     }
     private class Updater
     {
-
       private readonly AirportService airportService;
 
       public Updater(AirportService airportService)
@@ -40,7 +47,7 @@ namespace VatMap.Services
           Plane plane;
           if (existingCallsigns.Contains(item.callsign) == false)
           {
-            plane = BuildPlane(item);
+            plane = this.BuildPlane(item);
             snapshot.Planes.Add(plane);
           }
           else
@@ -50,9 +57,8 @@ namespace VatMap.Services
             existingCallsigns.Remove(plane.Callsign);
           }
           plane.GpsHistory.Insert(0, new Gps() { Latitude = item.latitude, Longitude = item.longitude });
-
-          snapshot.Planes.RemoveAll(q => existingCallsigns.Contains(q.Callsign));
         }
+        snapshot.Planes.RemoveAll(q => existingCallsigns.Contains(q.Callsign));
       }
 
       private Plane BuildPlane(Pilot item)
@@ -60,12 +66,15 @@ namespace VatMap.Services
         Plane ret = new Plane()
         {
           Callsign = item.callsign,
-          Altitude = item.altitude,
-          ArrivalAirport = airportService.GetOrDefault(item.flight_plan.arrival),
-          DepartureAirport = airportService.GetOrDefault(item.flight_plan.departure),
+          Altitude = item.altitude,          
           GpsHistory = new List<Gps>(),
           Heading = item.heading
         };
+        if (item.flight_plan != null)
+        {
+          ret.ArrivalAirport = this.airportService.GetOrDefault(item.flight_plan.arrival);
+          ret.DepartureAirport = this.airportService.GetOrDefault(item.flight_plan.departure);
+        }
         return ret;
       }
 
@@ -102,15 +111,54 @@ namespace VatMap.Services
       return ret;
     }
 
-    public void UpdateByVatsim(Root jsonData)
+    private bool TryLockUpdate()
     {
+      lock (this.updater)
+      {
+        if (this.updateInProgress)
+        {
+          this.logService.Log(LogService.Level.Verbose, "Updating already locked, skipping.");
+          return false;
+        }
+        else
+        {
+          this.updateInProgress = true;
+          this.logService.Log(LogService.Level.Verbose, "Locking updated.");
+          return true;
+        }
+      }
+    }
+
+    public void UnlockUpdate()
+    {
+      lock (this.updater)
+      {
+        this.updateInProgress = false;
+        this.logService.Log(LogService.Level.Verbose, "Updating unlocked.");
+      }
+    }
+
+    public async Task UpdateByVatsimAsync()
+    {
+      if (TryLockUpdate() == false) return;
+
+      this.logService.Log(LogService.Level.Info, "Updating by Vatsim.");
+      Root jsonData = await Task.FromResult<Root>(this.vatsimProvider.Obtain());
       Snapshot tmp = this.snapshot.Clone();
-      this.updater.Update(this.snapshot, jsonData);
+      await Task.Run(() => this.updater.Update(tmp, jsonData));
       lock (this.snapshot)
       {
         this.snapshot = tmp;
       }
+
+      UnlockUpdate();
     }
 
+    public async void UpdateByVatsimIfObsoleteAsync()
+    {
+      this.logService.Log(LogService.Level.Verbose, "Update by Vatsim if obsolete.");
+      if (this.snapshot.IsObsolete)
+        await this.UpdateByVatsimAsync();
+    }
   }
 }

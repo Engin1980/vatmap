@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace VatMap.Services
 {
   public class LogService
   {
-    private static string logFile = @"~\Data\log.txt";
+    private static string logFile = @"Data\log.txt";
     public enum Level
     {
       Verbose,
@@ -17,18 +14,35 @@ namespace VatMap.Services
       Exception
     }
 
+    private void EnsureFileExist()
+    {
+      //if (!System.IO.File.Exists(logFile))
+      //{
+      //  System.IO.File.Create(logFile);
+      //}
+    }
+
     public void Log(Level level, string text)
     {
+
       string msg = $"{DateTime.Now.ToString()} : {level} : {text}\n";
       Console.Write(msg);
-      System.IO.File.AppendAllText(logFile, msg);
+      lock (this)
+      {
+        this.EnsureFileExist();
+        System.IO.File.AppendAllText(logFile, msg);
+      }
     }
 
     public void Log(Level level, string text, Exception ex)
     {
       string msg = $"{DateTime.Now.ToString()} : {level} : {text} (Exception: {ex.Message})\n";
       Console.Write(msg);
-      System.IO.File.AppendAllText(logFile, msg);
+      lock (this)
+      {
+        this.EnsureFileExist();
+        System.IO.File.AppendAllText(logFile, msg);
+      }
     }
   }
 }
