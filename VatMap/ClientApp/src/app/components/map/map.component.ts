@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 
-import { Map, View } from "ol";
-import { Tile, Vector } from 'ol/layer';
+import { Map, Overlay, View } from "ol";
+import { Layer, Tile, Vector } from 'ol/layer';
 import { Vector as VectorSource } from 'ol/source';
 import { OSM } from 'ol/source';
 import { fromLonLat } from 'ol/proj';
@@ -13,6 +13,12 @@ import { HttpService } from 'src/app/services/http.service';
 import { Snapshot } from 'src/app/model/snapshot';
 import { SnapshotService } from 'src/app/services/snapshot.service';
 import { LogService } from 'src/app/services/log.service';
+import OverlayPositioning from 'ol/OverlayPositioning';
+import { DOCUMENT } from '@angular/common';
+
+//import * as $ from "jquery";
+import * as jQuery from "jquery";
+//import jQuery from "jquery";
 
 
 @Component({
@@ -26,11 +32,11 @@ export class MapComponent implements OnInit {
   public vm: Snapshot | null = null;
   private vectorLayer = new Vector({});
   private log: LogService = new LogService("MapComponent");
+  private popup: any;
 
-  constructor(private snapshotService: SnapshotService) { }
+  constructor(private snapshotService: SnapshotService, @Inject(DOCUMENT) document: typeof DOCUMENT) { }
 
-  ngOnInit(): void {   
-
+  private initMap(): void {
     this.log.log("preparing map");
     var osmLayer = new Tile({
       source: new OSM(),
@@ -49,7 +55,52 @@ export class MapComponent implements OnInit {
         zoom: 4
       })
     });
+  }
 
+  ngOnInit(): void {
+
+    var $j = jQuery.noConflict();
+
+    this.initMap();
+    const popupElement: any = document.getElementById("popup");
+    this.popup = new Overlay({
+      element: popupElement,
+      positioning: OverlayPositioning.BOTTOM_CENTER,
+      stopEvent: false,
+      offset: [0, -50]
+    });
+    this.map.addOverlay(this.popup);
+
+
+    var feature_onHover;
+    const g_map = this.map;
+    const g_popup = this.popup;
+    const me = this;
+    this.map.on('click', function (evt: any) {
+      var feature = g_map.forEachFeatureAtPixel(evt.pixel, function (feature: Feature) {
+        me.log.log("Feature clicked. " + JSON.stringify(feature));
+        return feature;
+      });
+      if (feature) {
+        var coordinates = feature.getGeometry().getCoordinates();
+        g_popup.setPosition(coordinates);
+        const st : any = $j("#map > #popup"); 
+        console.log("xx " + JSON.stringify(st));
+        st.popover({
+          placement: 'top',
+          html: true,
+          content: feature.get('name'),
+        });
+        popupElement.popover('show');
+      } else {
+        popupElement.popover('dispose');
+      }
+    });
+
+    this.initData();
+  }
+
+  private initData(): void {
     this.log.log("downloading data");
     this.snapshotService.get().subscribe(
       ret => this.updateVectorLayer(ret),

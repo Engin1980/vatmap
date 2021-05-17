@@ -6,6 +6,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { PureDataComponent } from './components/pure-data/pure-data.component';
 import { MapComponent } from './components/map/map.component';
+import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
+
 
 @NgModule({
   declarations: [
@@ -16,7 +18,8 @@ import { MapComponent } from './components/map/map.component';
   imports: [
     BrowserModule,
     HttpClientModule,
-    AppRoutingModule
+    AppRoutingModule,
+    NgbModule    
   ],
   providers: [],
   bootstrap: [AppComponent]
