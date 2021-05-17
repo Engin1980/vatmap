@@ -29,7 +29,7 @@ export class MapComponent implements OnInit {
 
   constructor(private snapshotService: SnapshotService) { }
 
-  ngOnInit(): void {
+  ngOnInit(): void {   
 
     this.log.log("preparing map");
     var osmLayer = new Tile({
@@ -41,7 +41,8 @@ export class MapComponent implements OnInit {
     this.map = new Map({
       target: 'map',
       layers: [
-        osmLayer
+        osmLayer,
+        this.vectorLayer
       ],
       view: new View({
         center: fromLonLat([17, 50]),
