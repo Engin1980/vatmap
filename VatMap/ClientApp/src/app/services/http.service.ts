@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { LogService } from './log.service';
+import { LogProvider } from '../providers/log.provider';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +9,7 @@ import { LogService } from './log.service';
 export class HttpService {
 
   private baseUrl = "http://localhost:55257/api/";
-  private log = new LogService("HttpService");
+  private log = new LogProvider("HttpService");
 
   constructor(private http: HttpClient) { }
 

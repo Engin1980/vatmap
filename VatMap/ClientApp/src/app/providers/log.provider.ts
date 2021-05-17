@@ -1,9 +1,4 @@
-import { Injectable } from '@angular/core';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class LogService {
+export class LogProvider {
 
   private parent: string;
   constructor(parent: string) {

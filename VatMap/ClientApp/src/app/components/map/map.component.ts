@@ -1,5 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 
+import { Plane } from '../../model/plane';
 import { Map, Overlay, View } from "ol";
 import { Layer, Tile, Vector } from 'ol/layer';
 import { Vector as VectorSource } from 'ol/source';
@@ -12,14 +13,9 @@ import { Style, Icon, Text } from 'ol/style';
 import { HttpService } from 'src/app/services/http.service';
 import { Snapshot } from 'src/app/model/snapshot';
 import { SnapshotService } from 'src/app/services/snapshot.service';
-import { LogService } from 'src/app/services/log.service';
+import { LogProvider } from 'src/app/providers/log.provider';
 import OverlayPositioning from 'ol/OverlayPositioning';
 import { DOCUMENT } from '@angular/common';
-
-//import * as $ from "jquery";
-import * as jQuery from "jquery";
-//import jQuery from "jquery";
-
 
 @Component({
   selector: 'app-map',
@@ -29,9 +25,9 @@ import * as jQuery from "jquery";
 export class MapComponent implements OnInit {
 
   public map: any;
-  public vm: Snapshot | null = null;
+  public vm: Snapshot | undefined;
   private vectorLayer = new Vector({});
-  private log: LogService = new LogService("MapComponent");
+  private log: LogProvider = new LogProvider("MapComponent");
   private popup: any;
 
   constructor(private snapshotService: SnapshotService, @Inject(DOCUMENT) document: typeof DOCUMENT) { }
@@ -57,46 +53,52 @@ export class MapComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-
-    var $j = jQuery.noConflict();
-
-    this.initMap();
-    const popupElement: any = document.getElementById("popup");
+  private initOverlay(): void {
+    const popupElement: any = document.getElementById("popupDiv");
     this.popup = new Overlay({
       element: popupElement,
       positioning: OverlayPositioning.BOTTOM_CENTER,
       stopEvent: false,
-      offset: [0, -50]
+      offset: [32, 0]
     });
     this.map.addOverlay(this.popup);
 
 
-    var feature_onHover;
-    const g_map = this.map;
-    const g_popup = this.popup;
     const me = this;
-    this.map.on('click', function (evt: any) {
-      var feature = g_map.forEachFeatureAtPixel(evt.pixel, function (feature: Feature) {
-        me.log.log("Feature clicked. " + JSON.stringify(feature));
+    this.map.on('pointermove', function (evt: any) {
+      var feature = me.map.forEachFeatureAtPixel(evt.pixel, function (feature: Feature) {
+        me.log.log("Feature clicked. " + JSON.stringify(feature.get("name")));
         return feature;
       });
+      const elm: any = document.getElementById("popupDiv");
       if (feature) {
         var coordinates = feature.getGeometry().getCoordinates();
-        g_popup.setPosition(coordinates);
-        const st : any = $j("#map > #popup"); 
-        console.log("xx " + JSON.stringify(st));
-        st.popover({
-          placement: 'top',
-          html: true,
-          content: feature.get('name'),
-        });
-        popupElement.popover('show');
+        me.log.log("A " + feature.get('name'));
+        me.log.log("B " + elm.innerHTML);
+        if (feature.get('name') === elm.innerHTML) {
+          if (elm.style.display == "none")
+            elm.style.display = "block";
+          else
+            elm.style.display = "none";
+        } else {
+          const plane: Plane | undefined = me.vm?.planes.find(q => q.callsign == feature.get('name'));
+          me.popup.setPosition(coordinates);
+          elm.style.display = "block";
+          if (plane === undefined)
+            elm.innerHTML = "???";
+          else
+            elm.innerHTML = "<b>" + plane.callsign + "</b><br />" + plane.altitude + "ft";
+        }
       } else {
-        popupElement.popover('dispose');
+        elm.style.display = "none";
       }
     });
+  }
 
+  ngOnInit(): void {
+
+    this.initMap();
+    this.initOverlay();
     this.initData();
   }
 

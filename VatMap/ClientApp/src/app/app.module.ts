@@ -6,7 +6,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { PureDataComponent } from './components/pure-data/pure-data.component';
 import { MapComponent } from './components/map/map.component';
-import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
+import {TooltipModule as NgxTooltipModule} from 'ngx-bootstrap/tooltip';
+import {PopoverModule as NgxPopoverModule} from 'ngx-bootstrap/popover';
 
 
 @NgModule({
@@ -19,7 +20,8 @@ import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
     BrowserModule,
     HttpClientModule,
     AppRoutingModule,
-    NgbModule    
+    NgxTooltipModule.forRoot(),
+    NgxPopoverModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]
